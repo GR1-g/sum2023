@@ -5,32 +5,53 @@ import { icosahedronInit, octahedronInit, cubeInit, tetrahedronInit,
 import { primCreate, primDraw, primLoad } from "./anim/render/prim.js";
 import { loadShader } from "./anim/render/res/shaders.js";
 
-export let azimuth;
-export let elevator;
-export let dist;
-let camera;
-let locAtUp = {
-  loc: vec(0, 0, 0),
-  at: vec(0, 0, 0),
-  up: vec(0, 0, 0)
-};
+export let posZ = 1;
+let posX = 0, posY = 0;
+let deltaX = 0, deltaY = 0;
 
-export function camMouse(deltaX, deltaY, deltaW) {
-  /*
-  locAtUp.at.x += deltaX / 100;
-  locAtUp.at.y += deltaY / 100;
-  locAtUp.loc.x += -deltaX / 100;
-  locAtUp.loc.y += deltaY / 100;
-  locAtUp.loc.z += deltaW / 100;
-  if (locAtUp.loc.z < 0) {
-    locAtUp.loc.z = 0;
+export function mouseMove( dx, dy, flag ) {
+  if (flag === 0) {
+    posX = dx - deltaX;
+    posY = -dy - deltaY;
+  } else if (flag === 1) {
+    deltaX = dx;
+    deltaY = -dy;
   }
-  */
+  if (posX < -1) {
+    posX = -1;
+  } else if (posX > 1) {
+    posX = 1;
+  }
+  if (posY < -1) {
+    posY = -1;
+  } else if (posY > 1) {
+    posY = 1;
+  }
+
+  if (deltaX < -1) {
+    deltaX = -1;
+  } else if (deltaX > 1) {
+    deltaX = 1;
+  }
+  if (deltaY < -1) {
+    deltaY = -1;
+  } else if (deltaY > 1) {
+    deltaY = 1;
+  }
+}
+
+export function mouseWheel( deltaW ) {
+  posZ += deltaW / 1000;
+  if (posZ < 0.1) {
+    posZ = 0.1;
+  } else if (posZ > 5) {
+    posZ = 5;
+  }
 }
 
 export function initGL() {
   const canvas = document.getElementById("glCanvas");
-  const gl = canvas.getContext("webgl2");
+  const gl = canvas.getContext("webgl2");  
 
   gl.clearColor(0, 0, 0, 1);
   gl.clear(gl.COLOR_BUFFER_BIT);
@@ -40,14 +61,10 @@ export function initGL() {
 //  let filename = "default";
   let filename = "fractal";
 
-  locAtUp.loc = vec(8, 8, 8);
-  locAtUp.at = vec(0, 0, 0);
-  locAtUp.up = vec(0, 1, 0); 
-
-  const ft1 = fetch(`/shader/${filename}/vert.glsl`).then((res) => res.text()).then((data) => {
+  const ft1 = fetch(`shader/${filename}/vert.glsl`).then((res) => res.text()).then((data) => {
     vs = data;
   });
-  const ft2 = fetch(`/shader/${filename}/frag.glsl`).then((res) => res.text()).then((data) => {
+  const ft2 = fetch(`shader/${filename}/frag.glsl`).then((res) => res.text()).then((data) => {
     fs = data;
   });
   const ft3 = fetch('cow.obj').then((res) => res.text()).then((data) => {
@@ -100,6 +117,9 @@ export function initGL() {
     }
 
     const uniformTime = gl.getUniformLocation(program, "time");
+    const uniformX = gl.getUniformLocation(program, "x");
+    const uniformY = gl.getUniformLocation(program, "y");
+    const uniformZ = gl.getUniformLocation(program, "z");
     const uniformVP = gl.getUniformLocation(program, "MatrVP");
     const posLoc = gl.getAttribLocation(program, "in_pos");
     const normLoc = gl.getAttribLocation(program, "in_norm");
@@ -136,20 +156,26 @@ export function initGL() {
 
       primDraw(gl, prim);
 
-      let Loc = locAtUp.loc;
-      let At = locAtUp.at;
-      let Up1 = locAtUp.up;
+      /*
+      let Loc = vec(8, 8, 8);
+      let At = vec(0, 0, 0);
+      let Up1 = vec(0, 1, 0);
       camera = cam(0.1, 0.1, 300, Loc, At, Up1, 47, 47);
-      const timeFromStart = Date.now() - beginTime;
-      gl.uniform1f(uniformTime, (timeFromStart) / 1000);
       let MatrVP = camera.MatrVP;
       let buf = new Float32Array([
         ...MatrVP.A[0],
         ...MatrVP.A[1],
         ...MatrVP.A[2],
         ...MatrVP.A[3]
-      ])
-      gl.uniformMatrix4fv(uniformVP, false, buf);
+      ]);
+      */
+      const timeFromStart = Date.now() - beginTime;
+      gl.uniform1f(uniformTime, (timeFromStart) / 1000);
+      gl.uniform1f(uniformX, posX);
+      gl.uniform1f(uniformY, posY);
+      gl.uniform1f(uniformZ, posZ);
+
+//      gl.uniformMatrix4fv(uniformVP, false, buf);
 
       window.requestAnimationFrame(draw);
     };

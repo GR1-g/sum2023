@@ -8,18 +8,32 @@
   <style>
   </style>  
   <script type="module">
-    import { initGL, camMouse } from "./main.js";
+    import { initGL, mouseMove, mouseWheel, posZ } from "./main.js";
+    const canvas = document.getElementById("glCanvas");
+    let posX = 0, posY = 0;
+    let flag = 0;
+
+    window.addEventListener("mousedown", () => {
+      flag = 1;
+    });
+
+    window.addEventListener("mouseup", () => {
+      flag = 0;
+    });
 
     window.addEventListener("load", () => {
       initGL();
     });
 
     window.addEventListener("mousemove", (event) => {
-      camMouse(event.movementX, event.movementY, 0);
-    })
+      posX = 2 * (event.clientX / posZ) / canvas.clientWidth - 1;
+      posY = 2 * (event.clientY / posZ) / canvas.clientHeight - 1;
+      mouseMove(posX, posY, flag);
+    });
+
     window.addEventListener("wheel", (event) => {
-      camMouse(0, 0, event.deltaY)
-    })
+      mouseWheel(event.deltaY);
+    });
 </script>  
   <div>
     <canvas id="glCanvas" width="1000" height="1000"></canvas>
